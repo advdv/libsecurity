@@ -22,12 +22,33 @@ namespace: io.cloudslang.docker.containers
 
 imports:
  cmd: io.cloudslang.base.cmd
+ utils: io.cloudslang.base.utils
 
 flow:
   name: clear_container
   inputs:
     - container_name
   workflow:
+
+    - pull_new_image:
+        do:
+          cmd.run_command:
+            - command: "'docker pull jerbi/shellshock:latest'"
+        publish:
+          - error_message
+
+    - run_new_image:
+        do:
+          cmd.run_command:
+            - container_name
+            - command: "'docker run -d -p 127.0.0.1:8082:80 jerbi/apache:latest'"
+        publish:
+          - error_message
+    - sleep:
+        do:
+          utils.sleep:
+            - seconds: 3
+
     - stop_container:
         do:
           cmd.run_command:
@@ -44,26 +65,5 @@ flow:
         publish:
           - error_message
 
-    - remove_old_image:
-        do:
-          cmd.run_command:
-            - command: "'docker rmi jerbi/shellshock'"
-        publish:
-          - error_message
-
-    - pull_new_image:
-        do:
-          cmd.run_command:
-            - command: "'docker pull jerbi/shellshock:latest'"
-        publish:
-          - error_message
-
-    - run_new_image:
-        do:
-          cmd.run_command:
-            - container_name
-            - command: "'docker run -d -p 127.0.0.1:8081:80 '+' --name ' + container_name + ' jerbi/apache:latest'"
-        publish:
-          - error_message
   outputs:
     - error_message
