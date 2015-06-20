@@ -32,7 +32,7 @@ flow:
         do:
           cmd.run_command:
             - container_name
-            - command: "'docker stop' + container_name"
+            - command: "'docker stop ' + container_name"
         publish:
           - error_message
 
@@ -40,7 +40,7 @@ flow:
         do:
           cmd.run_command:
             - container_name
-            - command: "'docker rm' + container_name"
+            - command: "'docker rm ' + container_name"
         publish:
           - error_message
 
@@ -54,7 +54,7 @@ flow:
     - pull_new_image:
         do:
           cmd.run_command:
-            - command: "'docker pull jerbi/shellshock'"
+            - command: "'docker pull jerbi/shellshock:latest'"
         publish:
           - error_message
 
