@@ -2,25 +2,35 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
 
 	"github.com/advanderveer/docksec/twitter"
 )
 
 func main() {
-	tw, err := twitter.NewStream()
+	tw, err := twitter.NewStream("advanderveer")
 	if err != nil {
-		log.Printf("Failed to create twitter stream: %s", err)
+		log.Fatalf("Failed to create twitter stream: %s", err)
 	}
+
+	//handle signals
+	sig := make(chan os.Signal)
+	signal.Notify(sig, os.Interrupt)
+	go func() {
+		<-sig
+		log.Println("Received interrupt signal, quitting twitter stream...")
+		tw.Stop()
+	}()
 
 	//listen for tweets
 	log.Printf("Starting twitter stream...")
-	ch := tw.Start()
 	for {
 		select {
 		case <-tw.Quit():
-			log.Println("Error in twitter stream, exiting!")
+			log.Println("Quit in twitter stream, exiting!")
 			return
-		case msg := <-ch:
+		case msg := <-tw.Events():
 			log.Printf("Message: %T", msg)
 		}
 	}
