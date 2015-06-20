@@ -25,14 +25,9 @@ func main() {
 
 	//listen for tweets
 	log.Printf("Starting twitter stream...")
-	for {
-		select {
-		case <-tw.Quit():
-			log.Println("Quit in twitter stream, exiting!")
-			return
-		case msg := <-tw.Events():
-			log.Printf("Message: %T", msg)
-		}
+	evs := tw.Start()
+	for ev := range evs {
+		log.Println(ev)
 	}
 
 }
