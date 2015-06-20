@@ -1,9 +1,5 @@
-This is my submission for the Dockercon 2015 Hackathon: When it comes to critical security updates, Informing the users of your software can be challenging - Docker can provide a solution
-
 # docksec
 
-Cyber crime is on the rise, whether it is Heartbleed or your wordpress 0day sql injection, the users of such software need to be notified as soon as possible. 
+When we're talking about security, the internet is the true wild wild west of today and the problems doesn't seem to be disappearing anytime soon. Until we find a way to create bulletproof server software we'll need a system in place to react as quick as possible to the release of a new 0-day vulnerability. 
 
-But users can acquire the software through a multitude of channels so keeping them all up-to-date can be challenging. But in the world of containerized applications, Docker can provide a solution.
-
-I would like to create a Docker plugin that automatically notifies users of potential security issues in the images they use.
+Traditionally it can be very difficult for a software vendor to inform their consumers. Especially for open source projects, the product is often acquired (anonymously) through a variety of channels and contacting the user can be downright impossible. Docker can provide a solution, as an universal runtime it can also act as a real time channel for receiving and acting on new vulnerabilities.
