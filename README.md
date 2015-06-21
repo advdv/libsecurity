@@ -32,6 +32,9 @@ The consumer, on his part, requires to run a container that monitors certain twi
 docker run -it -v /var/run/docker.sock:/var/run/docker.sock advanderveer/docksec --twitter_user=advanderveer
 ```
 
+Whenever a message such as _"CVE-2014-6271 in 9e1ed860cc088ae4b68ce28fb8888739652729e1107054f58dff90979f7dc935"_ is broadcasted across the network and picked up by the container above it will attempt two things:
 
+1. x
+2. y
 
 
