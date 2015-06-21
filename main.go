@@ -3,10 +3,19 @@ package main
 import (
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 
 	"github.com/advanderveer/docksec/twitter"
 )
+
+func RunCheckInfect(image string) error {
+	cmd := exec.Command("./checkinfect/infect.sh", image)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+
+	return cmd.Run()
+}
 
 func main() {
 	tw, err := twitter.NewStream("advanderveer")
@@ -23,11 +32,20 @@ func main() {
 		tw.Stop()
 	}()
 
+	//run checkinfect
+	log.Println("Running checkinfect.sh...")
+	err = RunCheckInfect("img")
+	if err != nil {
+		log.Printf("Failed to run checkinfect.sh: %s", err)
+	}
+	log.Println("Ran succesfully!")
+
 	//listen for tweets
 	log.Printf("Starting twitter stream...")
 	evs := tw.Start()
 	for ev := range evs {
 		if ev.Type == twitter.EventNewVulnerability {
+
 			//@todo handle checking of vulnerability
 			log.Printf("Reported '%s' in '%s'...", ev.CVE, ev.Image)
 
