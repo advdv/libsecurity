@@ -32,9 +32,10 @@ The consumer, on his part, requires to run a container that monitors certain twi
 docker run -it -v /var/run/docker.sock:/var/run/docker.sock advanderveer/docksec --twitter_user=advanderveer
 ```
 
-Whenever a message such as _"CVE-2014-6271 in 9e1ed860cc088ae4b68ce28fb8888739652729e1107054f58dff90979f7dc935"_ is broadcasted across the network and picked up by the container above it will attempt two things:
+Whenever a message such as _"CVE-2014-6271 in 9e1ed860cc088ae4b68ce28fb8888739652729e1107054f58dff90979f7dc935"_ is broadcasted across the network and picked up by the container above it will act in several ways:
 
-1. x
-2. y
-
+1. It will validated if any of the images managed by the daemon include the broadcasted vulnerability image id (e.g 9e1ed...)
+2. If any images are vulnerable it will reply on Twitter stating the fact it is vulnerable
+3. The owner of the twitter account can then reply to it with "use latest" to ask the Daemon to fix the problem by itself
+2. When asked, it will pull the latest version, if any of the running containers is vulnerable it will restart each container with the latest images. 
 
