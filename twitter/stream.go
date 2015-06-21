@@ -15,15 +15,20 @@ type EventType int
 // matches "CVE-2013-11111 in fed34532hash432"
 var EventNewVulnerabilityExp = regexp.MustCompile(`(CVE-\d+-\d+)\s+in\s+([^\s-]+)`)
 
+// matches "fix $(selector) with feda3fe222"
+var EventFixVulnerabilityExp = regexp.MustCompile(`fix\s+([^-\s]*)\s*with\s+([^-\s]+)`)
+
 var (
 	EventNewVulnerability = EventType(1)
+	EventFixVulnerability = EventType(2)
 )
 
 type Event struct {
-	CVE   string
-	Image string
-	Type  EventType
-	Tweet anaconda.Tweet
+	Selector string
+	CVE      string
+	Image    string
+	Type     EventType
+	Tweet    anaconda.Tweet
 }
 
 type Stream struct {
@@ -31,6 +36,8 @@ type Stream struct {
 	fstream anaconda.Stream
 	user    anaconda.User
 	events  chan Event
+
+	replies []anaconda.Tweet
 }
 
 func NewStream(name string) (*Stream, error) {
@@ -55,6 +62,7 @@ func NewStream(name string) (*Stream, error) {
 		fstream: api.PublicStreamFilter(vals),
 		user:    u,
 		events:  make(chan Event),
+		replies: []anaconda.Tweet{},
 	}, nil
 }
 
@@ -74,12 +82,22 @@ func (s *Stream) handleTweet(t anaconda.Tweet) error {
 		ev.CVE = m[1]
 		ev.Image = m[2]
 		ev.Type = EventNewVulnerability
+	} else if EventFixVulnerabilityExp.MatchString(t.Text) {
+		m := EventFixVulnerabilityExp.FindStringSubmatch(t.Text)
+		if len(m) < 3 {
+			s.api.Log.Errorf("Only %d regexp matches in text '%s'", len(m), t.Text)
+			return nil
+		}
+
+		ev.Selector = m[1]
+		ev.Image = m[2]
+		ev.Type = EventFixVulnerability
 	} else {
+		s.api.Log.Debugf("Tweet %d didn't match any special action", t.Id)
 		return nil
 	}
 
 	s.events <- ev
-
 	return nil
 }
 

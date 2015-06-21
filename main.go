@@ -29,7 +29,7 @@ func main() {
 	for ev := range evs {
 		if ev.Type == twitter.EventNewVulnerability {
 			//@todo handle checking of vulnerability
-			log.Printf("Vul '%s' in '%s' ", ev.CVE, ev.Image)
+			log.Printf("Reported '%s' in '%s'...", ev.CVE, ev.Image)
 
 			//require: hostname, image name and container id
 			hostname := "myhostname"
@@ -43,7 +43,9 @@ func main() {
 
 			log.Println("Sent reply")
 
+		} else if ev.Type == twitter.EventFixVulnerability {
+			//@todo handle fixing vulnerability
+			log.Printf("Fixing '%s' with image '%s'... ", ev.Selector, ev.Image)
 		}
 	}
-
 }
