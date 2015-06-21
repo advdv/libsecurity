@@ -1,11 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"io"
 	"log"
 	"os"
-	"os/exec"
 	"os/signal"
 
 	"github.com/advanderveer/docksec/twitter"
@@ -14,25 +11,41 @@ import (
 
 var dock *docker.Client
 
-func Scan(image string) ([]docker.APIContainers, []docker.APIImages, error) {
-	cs := []docker.APIContainers{}
-	imgs := []docker.APIImages{}
-
-	return cs, imgs, nil
-
+type CheckInfect struct {
+	images     []docker.APIImages
+	containers []docker.APIContainers
 }
 
-func RunCheckInfect(image string) error {
-	buff := bytes.NewBuffer(nil)
-	mw := io.MultiWriter(os.Stdout, buff)
+func scan(client *docker.Client, infect_id string) (*CheckInfect, error) {
+	infect := &CheckInfect{[]docker.APIImages{}, []docker.APIContainers{}}
+	imgs, err := client.ListImages(docker.ListImagesOptions{All: false})
+	if err != nil {
+		return infect, err
+	}
 
-	cmd := exec.Command("./checkinfect/infect.sh", image)
-	cmd.Stderr = mw
-	cmd.Stdout = mw
+	for _, img := range imgs {
+		himgs, _ := client.ImageHistory(img.ID)
+		for _, himg := range himgs {
+			if himg.ID == infect_id {
+				infect.images = append(infect.images, img)
+			}
+		}
+	}
+	containers, err := client.ListContainers(docker.ListContainersOptions{All: false})
+	if err != nil {
+		return infect, err
+	}
 
-	log.Println("STDOUT:", buff.String())
+	for _, container := range containers {
+		himgs, _ := client.ImageHistory(container.Image)
+		for _, himg := range himgs {
+			if himg.ID == infect_id {
+				infect.containers = append(infect.containers, container)
+			}
+		}
+	}
 
-	return cmd.Run()
+	return infect, nil
 }
 
 func main() {
@@ -58,13 +71,19 @@ func main() {
 	// }
 	// log.Println("Ran succesfully!")
 
+	//
+	client, err := docker.NewClient("unix:///var/run/docker.sock")
+	if err != nil {
+		log.Fatalf("Failed to connect to the docker daemon: %s", err)
+	}
+
 	// run check images
 	log.Printf("Scanning Daemon...")
-	cs, imgs, err := Scan("8c2e06607696bd4afb3d03b687e361cc43cf8ec1a4a725bc96e39f05ba97dd55")
+	res, err := scan(client, "8c2e06607696bd4afb3d03b687e361cc43cf8ec1a4a725bc96e39f05ba97dd55")
 	if err != nil {
 		log.Fatalf("Failed to scan host: %s", err)
 	}
-	log.Println("Found vulnerabilities in %s images and %d containers!", len(cs), len(imgs))
+	log.Printf("Found vulnerabilities in %d images and %d containers!", len(res.images), len(res.containers))
 
 	//listen for tweets
 	log.Printf("Starting twitter stream...")
