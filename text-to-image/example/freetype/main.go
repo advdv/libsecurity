@@ -29,47 +29,41 @@ var (
 	wonb     = flag.Bool("whiteonblack", false, "white text on a black background")
 )
 
-var text = []string{
-	"’Twas brillig, and the slithy toves",
-	"Did gyre and gimble in the wabe;",
-	"All mimsy were the borogoves,",
-	"And the mome raths outgrabe.",
-	"",
-	"“Beware the Jabberwock, my son!",
-	"The jaws that bite, the claws that catch!",
-	"Beware the Jubjub bird, and shun",
-	"The frumious Bandersnatch!”",
-	"",
-	"He took his vorpal sword in hand:",
-	"Long time the manxome foe he sought—",
-	"So rested he by the Tumtum tree,",
-	"And stood awhile in thought.",
-	"",
-	"And as in uffish thought he stood,",
-	"The Jabberwock, with eyes of flame,",
-	"Came whiffling through the tulgey wood,",
-	"And burbled as it came!",
-	"",
-	"One, two! One, two! and through and through",
-	"The vorpal blade went snicker-snack!",
-	"He left it dead, and with its head",
-	"He went galumphing back.",
-	"",
-	"“And hast thou slain the Jabberwock?",
-	"Come to my arms, my beamish boy!",
-	"O frabjous day! Callooh! Callay!”",
-	"He chortled in his joy.",
-	"",
-	"’Twas brillig, and the slithy toves",
-	"Did gyre and gimble in the wabe;",
-	"All mimsy were the borogoves,",
-	"And the mome raths outgrabe.",
+
+// readLines reads a whole file into memory
+// and returns a slice of its lines.
+func readLines(path string) ([]string, error) {
+  file, err := os.Open(path)
+  if err != nil {
+    return nil, err
+  }
+  defer file.Close()
+
+  var lines []string
+  scanner := bufio.NewScanner(file)
+  for scanner.Scan() {
+    lines = append(lines, scanner.Text())
+  }
+  return lines, scanner.Err()
 }
 
 func main() {
 	flag.Parse()
 
-	// Read the font data.
+        if len(os.Args) != 3 {
+          fmt.Fprintf(os.Stderr, "Usage: %s: <text name to read> <image name to create>", os.Args)
+          return;
+        }
+        fileToRead := os.Args[1]
+        fileToWrite := os.Args[2]
+
+        // Read input text file        
+        text, err := readLines(fileToRead)
+        if err != nil {
+            log.Fatalf("readLines: %s", err)
+        }
+	
+        // Read the font data.
 	fontBytes, err := ioutil.ReadFile(*fontfile)
 	if err != nil {
 		log.Println(err)
@@ -122,7 +116,7 @@ func main() {
 	}
 
 	// Save that RGBA image to disk.
-	f, err := os.Create("out.png")
+	f, err := os.Create(fileToWrite)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
@@ -139,5 +133,5 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
-	fmt.Println("Wrote out.png OK.")
+	fmt.Println("Wrote %s OK.", fileToWrite)
 }
