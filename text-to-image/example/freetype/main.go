@@ -10,7 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"image"
-	"image/color"
+//	"image/color"
 	"image/draw"
 	"image/png"
 	"io/ioutil"
@@ -76,11 +76,11 @@ func main() {
 	}
 
 	// Initialize the context.
-	fg, bg := image.Black, image.White
-	ruler := color.RGBA{0xdd, 0xdd, 0xdd, 0xff}
+	fg, bg := image.White, image.Black
+	//ruler := color.RGBA{0xdd, 0xdd, 0xdd, 0xff}
 	if *wonb {
-		fg, bg = image.White, image.Black
-		ruler = color.RGBA{0x22, 0x22, 0x22, 0xff}
+		fg, bg = image.Black, image.White
+	//	ruler = color.RGBA{0x22, 0x22, 0x22, 0xff}
 	}
 	rgba := image.NewRGBA(image.Rect(0, 0, 640, 480))
 	draw.Draw(rgba, rgba.Bounds(), bg, image.ZP, draw.Src)
@@ -99,10 +99,10 @@ func main() {
 	}
 
 	// Draw the guidelines.
-	for i := 0; i < 200; i++ {
-		rgba.Set(10, 10+i, ruler)
-		rgba.Set(10+i, 10, ruler)
-	}
+	//for i := 0; i < 200; i++ {
+	//	rgba.Set(10, 10+i, ruler)
+	//	rgba.Set(10+i, 10, ruler)
+	//}
 
 	// Draw the text.
 	pt := freetype.Pt(10, 10+int(c.PointToFix32(*size)>>8))
