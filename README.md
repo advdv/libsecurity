@@ -23,7 +23,7 @@ CVE-2014-6271 in 9e1ed860cc088ae4b68ce28fb8888739652729e1107054f58dff90979f7dc93
 
 The vendor is reponsible for broadcasting it across a messaging platform, this demo uses twitter but one could imagine more secure channels such as irc bots or the Docker hub.
 
-[image of twitter posting]
+![Timeglass Screenshot](/screenshot.png?raw=true "Timeglass Screenshot")
 
 ### The Consumer
 The consumer, on his part, requires to run a container that monitors certain twitter feeds for new vulnerabilities. The consumer can decide what Twitter user to follow. For example, inside a corporate network one might want to watch to the twitter feed of the security office (advanderveer).
