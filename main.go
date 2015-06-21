@@ -16,6 +16,7 @@ import (
 // 1. consumersa are running a countainer as such: `docker run -d busybox /bin/sh -c "while true; do echo Hello World; sleep 1; done"`
 // 2. and have the docksec container running: `make build && make`
 // 3. sycoso (re)tweets: 'CVE-2014-22111 in 8c2e06607696bd4afb3d03b687e361cc43cf8ec1a4a725bc96e39f05ba97dd55'
+// 4. first time: running container should restart with latest pulled version
 //
 //
 
@@ -69,8 +70,8 @@ func fix(vul *twitter.Vulnerable) error {
 		}
 	}
 
-	//restart each container with its existing image
-	//@TODO handle container names
+	//restart each container with its newly pulled image and existing configs
+	//@TODO handle container names?
 	for _, apic := range vul.Containers {
 
 		c, err := client.InspectContainer(apic.ID)
@@ -145,24 +146,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to the docker daemon: %s", err)
 	}
-
-	// test fix
-	// err = fix(&twitter.Vulnerable{
-	// 	CVE: "CVE-2012-2012",
-	// 	Images: []docker.APIImages{
-	// 		docker.APIImages{
-	// 			ID:       "f0818f77b5232c4e150bfb36b650adf276508ff7d3992535c3dd2b158b0f4fb8",
-	// 			RepoTags: []string{"busybox:latest"},
-	// 		},
-	// 	},
-	// 	Containers: []docker.APIContainers{
-	// 		docker.APIContainers{
-	// 			ID: "fc2c16b9dbc334edf8e6cdfa7284f75cd88d8ccc870d3d99dee21dad155fe5c3",
-	// 		},
-	// 	},
-	// })
-
-	// log.Fatalf("err: %s", err)
 
 	tw, err := twitter.NewStream("advanderveer")
 	if err != nil {
