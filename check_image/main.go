@@ -46,7 +46,7 @@ func main() {
 			code, err := client.WaitContainer(container.ID)
 
 			if code > 0 {
-				fmt.Println("Image " + img.ID + " is vulnerable to " + args[i] + "!")
+				fmt.Println(args[i] + " in " + img.ID)
 			}
 
 			if err != nil {
