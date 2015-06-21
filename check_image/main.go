@@ -24,7 +24,7 @@ func main() {
 	for _, img := range imgs {
 		for i := range args {
 
-			config := &docker.Config{Image: img.ID, Cmd: []string{"/script/shell.sh"}}
+			config := &docker.Config{Image: img.ID, Entrypoint:[]string{"/bin/sh", "-c"}, Cmd: []string{"/script/shell.sh"}}
 
 			// Create the container from an id, specify the command, mount CVE volume
 			container, err := client.CreateContainer(docker.CreateContainerOptions{Config: config})
