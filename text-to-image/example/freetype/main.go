@@ -26,7 +26,7 @@ var (
 	hinting  = flag.String("hinting", "none", "none | full")
 	size     = flag.Float64("size", 12, "font size in points")
 	spacing  = flag.Float64("spacing", 1.5, "line spacing (e.g. 2 means double spaced)")
-	wonb     = flag.Bool("blackonwhite", false, "white text on a black background")
+	wonb     = flag.Bool("whiteonblack", false, "white text on a black background")
 )
 
 var text = []string{
