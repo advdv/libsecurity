@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/ChimeraCoder/anaconda"
+	"github.com/fsouza/go-dockerclient"
 	"github.com/hashicorp/errwrap"
 )
 
@@ -16,19 +17,25 @@ type EventType int
 var EventNewVulnerabilityExp = regexp.MustCompile(`(CVE-\d+-\d+)\s+in\s+([^\s-]+)`)
 
 // matches "fix $(selector) with feda3fe222"
-var EventFixVulnerabilityExp = regexp.MustCompile(`fix\s+([^-\s]*)\s*with\s+([^-\s]+)`)
+var EventFixVulnerabilityExp = regexp.MustCompile(`use latest`)
 
 var (
 	EventNewVulnerability = EventType(1)
 	EventFixVulnerability = EventType(2)
 )
 
+type Vulnerable struct {
+	CVE        string
+	Containers []docker.APIContainers
+	Images     []docker.APIImages
+}
+
 type Event struct {
-	Selector string
-	CVE      string
-	Image    string
-	Type     EventType
-	Tweet    anaconda.Tweet
+	Vulnerable *Vulnerable
+	CVE        string
+	Image      string
+	Type       EventType
+	Tweet      anaconda.Tweet
 }
 
 type Stream struct {
@@ -37,7 +44,7 @@ type Stream struct {
 	user    anaconda.User
 	events  chan Event
 
-	replies []anaconda.Tweet
+	vulnerable map[int64]*Vulnerable
 }
 
 func NewStream(name string) (*Stream, error) {
@@ -58,11 +65,11 @@ func NewStream(name string) (*Stream, error) {
 	vals.Set("follow", strconv.FormatInt(u.Id, 10))
 
 	return &Stream{
-		api:     api,
-		fstream: api.PublicStreamFilter(vals),
-		user:    u,
-		events:  make(chan Event),
-		replies: []anaconda.Tweet{},
+		api:        api,
+		fstream:    api.PublicStreamFilter(vals),
+		user:       u,
+		events:     make(chan Event),
+		vulnerable: map[int64]*Vulnerable{},
 	}, nil
 }
 
@@ -83,14 +90,7 @@ func (s *Stream) handleTweet(t anaconda.Tweet) error {
 		ev.Image = m[2]
 		ev.Type = EventNewVulnerability
 	} else if EventFixVulnerabilityExp.MatchString(t.Text) {
-		m := EventFixVulnerabilityExp.FindStringSubmatch(t.Text)
-		if len(m) < 3 {
-			s.api.Log.Errorf("Only %d regexp matches in text '%s'", len(m), t.Text)
-			return nil
-		}
-
-		ev.Selector = m[1]
-		ev.Image = m[2]
+		ev.Vulnerable = s.vulnerable[t.InReplyToStatusID]
 		ev.Type = EventFixVulnerability
 	} else {
 		s.api.Log.Debugf("Tweet %d didn't match any special action", t.Id)
@@ -101,15 +101,16 @@ func (s *Stream) handleTweet(t anaconda.Tweet) error {
 	return nil
 }
 
-func (s *Stream) ReplyVulnerable(t anaconda.Tweet, hostname, imgid, cid string) error {
+func (s *Stream) ReplyVulnerable(ev Event, hostname string, vul *Vulnerable) error {
 	vals := url.Values{}
-	vals.Set("in_reply_to_status_id", strconv.FormatInt(t.Id, 10))
+	vals.Set("in_reply_to_status_id", strconv.FormatInt(ev.Tweet.Id, 10))
 
-	_, err := s.api.PostTweet(fmt.Sprintf("@%s host %s is vulnerable, container: %s", t.User.ScreenName, hostname, cid), vals)
+	reply, err := s.api.PostTweet(fmt.Sprintf("@%s host %s is vulnerable: %d images and %d containers", ev.Tweet.User.ScreenName, hostname, len(vul.Images), len(vul.Containers)), vals)
 	if err != nil {
 		return err
 	}
 
+	s.vulnerable[reply.Id] = vul
 	return nil
 }
 
@@ -141,4 +142,8 @@ func (s *Stream) Events() chan interface{} {
 
 func (s *Stream) Stop() {
 	s.fstream.Interrupt()
+}
+
+func (s *Stream) Close() {
+	s.api.Close()
 }
