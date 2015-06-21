@@ -3,13 +3,26 @@ package twitter
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/hashicorp/errwrap"
 )
 
+type EventType int
+
+// matches "CVE-2013-11111 in fed34532hash432"
+var EventNewVulnerabilityExp = regexp.MustCompile(`(CVE-\d+-\d+)\s+in\s+([^\s-]+)`)
+
+var (
+	EventNewVulnerability = EventType(1)
+)
+
 type Event struct {
+	CVE   string
+	Image string
+	Type  EventType
 	Tweet anaconda.Tweet
 }
 
@@ -51,7 +64,33 @@ func (s *Stream) handleTweet(t anaconda.Tweet) error {
 		Tweet: t,
 	}
 
+	if EventNewVulnerabilityExp.MatchString(t.Text) {
+		m := EventNewVulnerabilityExp.FindStringSubmatch(t.Text)
+		if len(m) < 3 {
+			s.api.Log.Errorf("Only %d regexp matches in text '%s'", len(m), t.Text)
+			return nil
+		}
+
+		ev.CVE = m[1]
+		ev.Image = m[2]
+		ev.Type = EventNewVulnerability
+	} else {
+		return nil
+	}
+
 	s.events <- ev
+
+	return nil
+}
+
+func (s *Stream) ReplyVulnerable(t anaconda.Tweet, hostname, imgid, cid string) error {
+	vals := url.Values{}
+	vals.Set("in_reply_to_status_id", strconv.FormatInt(t.Id, 10))
+
+	_, err := s.api.PostTweet(fmt.Sprintf("@%s host %s is vulnerable, container: %s", t.User.ScreenName, hostname, cid), vals)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

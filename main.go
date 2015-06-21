@@ -27,7 +27,23 @@ func main() {
 	log.Printf("Starting twitter stream...")
 	evs := tw.Start()
 	for ev := range evs {
-		log.Println(ev)
+		if ev.Type == twitter.EventNewVulnerability {
+			//@todo handle checking of vulnerability
+			log.Printf("Vul '%s' in '%s' ", ev.CVE, ev.Image)
+
+			//require: hostname, image name and container id
+			hostname := "myhostname"
+			image := "image"
+			cid := "container id"
+
+			err := tw.ReplyVulnerable(ev.Tweet, hostname, image, cid)
+			if err != nil {
+				log.Printf("Error replying vulnerable: %s", err)
+			}
+
+			log.Println("Sent reply")
+
+		}
 	}
 
 }
