@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
 
+	"github.com/ChimeraCoder/anaconda"
 	"github.com/advanderveer/docksec/twitter"
 	"github.com/fsouza/go-dockerclient"
 )
@@ -13,23 +16,52 @@ import (
 //
 // Consider the example that busybox has a vulnerability
 //
-// 1. consumersa are running a countainer as such: `docker run -d busybox /bin/sh -c "while true; do echo Hello World; sleep 1; done"`
+// 1. consumersa are running a countainer as such: `docker run -it -p 8080:80 jerbi/apache:1.0`
 // 2. and have the docksec container running: `make build && make`
-// 3. sycoso (re)tweets: 'CVE-2014-22111 in 8c2e06607696bd4afb3d03b687e361cc43cf8ec1a4a725bc96e39f05ba97dd55'
+// 3. sycoso (re)tweets: 'CVE-2014-6271 in 9e1ed860cc088ae4b68ce28fb8888739652729e1107054f58dff90979f7dc935'
 // 4. first time: running container should restart with latest pulled version
-//
-//
 
 var client *docker.Client
 
-func alreadyFixed(cve, image string) (bool, error) {
+const (
+	FILENAME = "images-cve.dat"
+	FORMAT   = "%s@%s\r\n"
+)
 
-	return false, nil
+func markAsFixed(imageName string, cveName string) error {
+	f, err := os.OpenFile(FILENAME, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0660)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	imageAndCve := fmt.Sprintf(FORMAT, cveName, imageName)
+
+	_, err = f.WriteString(imageAndCve)
+	return err
 }
 
-func markAsFixed(cve, image string) error {
+func alreadyFixed(imageName string, cveName string) (bool, error) {
+	imageAndCve := fmt.Sprintf(FORMAT, cveName, imageName)
 
-	return nil
+	f, err := os.OpenFile(FILENAME, os.O_RDONLY|os.O_RDWR|os.O_CREATE, 0)
+	if err != nil {
+		fmt.Printf("failed opening %s", FILENAME)
+		return false, err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+
+	found := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.TrimSpace(line) == strings.TrimSpace(imageAndCve) {
+			fmt.Printf("found!")
+			found = true
+			break
+		}
+	}
+	return found, nil
 }
 
 func fix(vul *twitter.Vulnerable) error {
@@ -40,7 +72,7 @@ func fix(vul *twitter.Vulnerable) error {
 
 	//fix by pulling latest and marking as such afterwards
 	for _, img := range vul.Images {
-		res, err := alreadyFixed(vul.CVE, img.ID)
+		res, err := alreadyFixed(img.ID, vul.CVE)
 		if err != nil {
 			log.Printf("Error checking if the image %s is already fixed: %s", img.ID, err)
 		} else if res {
@@ -64,7 +96,7 @@ func fix(vul *twitter.Vulnerable) error {
 			log.Printf("Done")
 		}
 
-		err = markAsFixed(vul.CVE, img.ID)
+		err = markAsFixed(img.ID, vul.CVE)
 		if err != nil {
 			log.Printf("Error marking img '%s' and cve '%s' as fixed: %s", img.ID, vul.CVE, err)
 		}
@@ -79,20 +111,32 @@ func fix(vul *twitter.Vulnerable) error {
 			log.Printf("Error inspecting container '%s': %s", apic.ID, err)
 		}
 
+		hostConfig := c.HostConfig
+
 		if !c.State.Running {
 			continue
 		}
 
+		//@todo we assume we are looking to run the latest
+		c.Config.Image = c.Config.Image[:strings.Index(c.Config.Image, ":")] + ":latest"
+
 		newc, err := client.CreateContainer(docker.CreateContainerOptions{
-			Config:     c.Config,
-			HostConfig: c.HostConfig,
+			Config: c.Config,
 		})
 
 		if err != nil {
 			log.Printf("Error creating new container of '%s': %s", c.ID, err)
+			break
 		}
 
-		err = client.StartContainer(newc.ID, newc.HostConfig)
+		//@todo this port change is actually domain logic
+		hostConfig.PortBindings["80/tcp"] = []docker.PortBinding{
+			docker.PortBinding{
+				HostPort: "8081",
+			},
+		}
+
+		err = client.StartContainer(newc.ID, hostConfig)
 		if err != nil {
 			log.Printf("Error start new container '%s': %s", newc.ID, err)
 		}
@@ -141,7 +185,12 @@ func scan(infect_id string) (*twitter.Vulnerable, error) {
 }
 
 func main() {
-	var err error
+	f, err := os.Create(FILENAME)
+	if err != nil {
+		log.Fatalf("failed to create file: %s", err)
+	}
+	f.Close()
+
 	client, err = docker.NewClient("unix:///var/run/docker.sock")
 	if err != nil {
 		log.Fatalf("Failed to connect to the docker daemon: %s", err)
@@ -149,6 +198,11 @@ func main() {
 
 	tw, err := twitter.NewStream("advanderveer")
 	if err != nil {
+		if apiErr, ok := err.(*anaconda.ApiError); ok {
+			log.Printf("Api Error, headers: %s", apiErr.Header)
+
+		}
+
 		log.Fatalf("Failed to create twitter stream: %s", err)
 	}
 

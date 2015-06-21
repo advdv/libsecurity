@@ -53,6 +53,7 @@ func NewStream(name string) (*Stream, error) {
 
 	api := anaconda.NewTwitterApi(access_token, access_token_secret)
 	api.SetLogger(anaconda.BasicLogger)
+	api.ReturnRateLimitError(true)
 
 	api.Log.Debugf("Fetching user %s...", name)
 	u, err := api.GetUsersShow(name, nil)
