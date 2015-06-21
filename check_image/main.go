@@ -10,12 +10,14 @@ import (
 func main() {
 	args := os.Args[1:]
 
-	endpoint := os.Getenv("DOCKER_HOST")
-	path := os.Getenv("DOCKER_CERT_PATH")
-	ca := fmt.Sprintf("%s/ca.pem", path)
-	cert := fmt.Sprintf("%s/cert.pem", path)
-	key := fmt.Sprintf("%s/key.pem", path)
-	client, _ := docker.NewTLSClient(endpoint, cert, key, ca)
+//endpoint := os.Getenv("DOCKER_HOST")
+        endpoint := "unix:///var/run/docker.sock"
+	//path := os.Getenv("DOCKER_CERT_PATH")
+	//ca := fmt.Sprintf("%s/ca.pem", path)
+	//cert := fmt.Sprintf("%s/cert.pem", path)
+	//key := fmt.Sprintf("%s/key.pem", path)
+	//client, _ := docker.NewTLSClient(endpoint, cert, key, ca)
+        client, _ := docker.NewClient(endpoint)
 
 	imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
 
