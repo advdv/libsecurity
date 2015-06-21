@@ -47,3 +47,4 @@ Whenever a message such as _"CVE-2014-6271 in 9e1ed860cc088ae4b68ce28fb888873965
 - [Peter Rossbach](https://github.com/rossbachp)
 - [Meir Wahnon](https://github.com/meirwah)
 - [Ad van der Veer](https://github.com/advanderveer)
+- [Greg Deed](https://github.com/tegbiz)
