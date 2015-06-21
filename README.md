@@ -26,5 +26,12 @@ The vendor is reponsible for broadcasting it across a messaging platform, this d
 [image of twitter posting]
 
 ### The Consumer
+The consumer, on his part, requires to run a container that monitors certain twitter feeds for new vulnerabilities. The consumer can decide what Twitter user to follow. For example, inside a corporate network one might want to watch to the twitter feed of the security office (advanderveer).
 
-xyz
+```
+docker run -it -v /var/run/docker.sock:/var/run/docker.sock advanderveer/docksec --twitter_user=advanderveer
+```
+
+
+
+
