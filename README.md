@@ -2,7 +2,6 @@
 
 
 # libsecurity
-
 When we're talking about security, the internet is the true wild wild west of today and the problems doesn't seem to be disappearing anytime soon. Until we find a way to create bulletproof server software we'll need a system in place to react as quick as possible to the release of new vulnerabilities. 
 
 Traditionally it can be very difficult for a software vendor to inform their consumers. Especially for open source projects, the product is often acquired (anonymously) through a variety of channels and contacting the user can be downright impossible. Docker can provide a solution, as an universal runtime it can also act as a real time channel for receiving and acting on new vulnerabilities.
@@ -11,7 +10,6 @@ Traditionally it can be very difficult for a software vendor to inform their con
 fundamental to the workings of libsecurity is the involvement two seperate parties: the vendor and the consumer. The vendor releases new versions of software and is responsible for fixing vulnerability issues and broadcasting the existence of such vulnerability to the consumers. 
 
 ### The Vendor
-
 For this party, libsecurity provides a container that allows vendors to test certain images for the existence of a vulnerability on any of the images that are managed by Docker:
 
 ```
@@ -42,3 +40,10 @@ Whenever a message such as _"CVE-2014-6271 in 9e1ed860cc088ae4b68ce28fb888873965
 3. The owner of the twitter account can then reply to it with "use latest" to ask the Daemon to fix the problem by itself
 2. When asked, it will pull the latest version, if any of the running containers is vulnerable it will restart each container with the latest images. 
 
+### Contributors
+
+- [Amir Jerbi](https://github.com/jerbia)
+- [Daniel Sachse](https://github.com/w0mbat)
+- [Peter Rossbach](https://github.com/rossbachp)
+- [Meir Wahnon](https://github.com/meirwah)
+- [Ad van der Veer](https://github.com/advanderveer)
