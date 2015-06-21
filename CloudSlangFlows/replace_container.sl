@@ -62,7 +62,7 @@ flow:
         do:
           cmd.run_command:
             - container_name
-            - command: "'docker run -d -p 80:80 '+' --name ' + container_name + ' jerbi/shellshock:latest'"
+            - command: "'docker run -d -p 127.0.0.1:8081:80 '+' --name ' + container_name + ' jerbi/apache:latest'"
         publish:
           - error_message
   outputs:
